@@ -18,7 +18,7 @@ This script is ideal for use inside EC2 instances or as part of CI/CD pipelines 
 ## Parameters
 | Parameter     | Required | Description                                                                   |
 | ------------- | -------- | ----------------------------------------------------------------------------- |
-| `--key`       | Yes      | The specific metadata key to fetch (e.g. `instance-id`)                       |
+| `--key`       | Optional | The specific metadata key to fetch (e.g. `instance-id`)                       |
 | `--base-url`  | Yes      | Base URL for EC2 metadata                                                     |
 | `--token-url` | Yes      | Token URL for IMDSv2                                                          |
 
