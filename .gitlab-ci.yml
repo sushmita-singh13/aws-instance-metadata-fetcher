@@ -1,0 +1,16 @@
+stages:
+  - fetch_metadata
+  
+variables:
+  METADATA_BASE_URL: $METADATA_BASE_URL
+  TOKEN_URL: $TOKEN_URL
+  
+fetch_metadata:
+  stage: fetch_metadata
+  image: python:3.12
+  script:
+    - pip install requests
+    # to fetch only single key
+    - python fetch_metadata.py --key instance-id --base-url "$METADATA_BASE_URL" --token-url "$TOKEN_URL" 
+    # to fetch all keys of ec2 instance
+    # - python fetch_metadata.py --base-url "$METADATA_BASE_URL" --token-url "$TOKEN_URL"
