@@ -3,19 +3,14 @@ import argparse
 import json
 import sys
 
-# AWS Metadata Service base URL (IMDSv2)
-METADATA_BASE_URL = "http://169.254.169.254/latest/meta-data/"
-TOKEN_URL = "http://169.254.169.254/latest/api/token"
-
-# Request timeout in seconds
 TIMEOUT = 2
 
 
-def get_token():
+def get_token(token_url):
     """Fetch an IMDSv2 token."""
     try:
         response = requests.put(
-            TOKEN_URL,
+            token_url,
             headers={"X-aws-ec2-metadata-token-ttl-seconds": "21600"},
             timeout=TIMEOUT
         )
@@ -26,9 +21,9 @@ def get_token():
         sys.exit(1)
 
 
-def fetch_metadata_key(key, token):
+def fetch_metadata_key(base_url, key, token):
     """Fetch a specific metadata key."""
-    url = METADATA_BASE_URL + key
+    url = base_url.rstrip("/") + "/" + key
     try:
         response = requests.get(
             url,
@@ -42,9 +37,9 @@ def fetch_metadata_key(key, token):
         sys.exit(1)
 
 
-def fetch_all_metadata(token, path=""):
+def fetch_all_metadata(base_url, token, path=""):
     """Recursively fetch all metadata starting from the given path."""
-    url = METADATA_BASE_URL + path
+    url = base_url.rstrip("/") + "/" + path
     try:
         response = requests.get(
             url,
@@ -57,10 +52,9 @@ def fetch_all_metadata(token, path=""):
         metadata = {}
         for item in items:
             if item.endswith("/"):
-                # Recurse into sub-path
-                metadata[item.rstrip("/")] = fetch_all_metadata(token, path + item)
+                metadata[item.rstrip("/")] = fetch_all_metadata(base_url, token, path + item)
             else:
-                item_url = METADATA_BASE_URL + path + item
+                item_url = base_url.rstrip("/") + "/" + path + item
                 item_response = requests.get(
                     item_url,
                     headers={"X-aws-ec2-metadata-token": token},
@@ -78,14 +72,17 @@ def fetch_all_metadata(token, path=""):
 def main():
     parser = argparse.ArgumentParser(description="Fetch AWS EC2 instance metadata as JSON.")
     parser.add_argument("--key", help="Specific metadata key to fetch", required=False)
+    parser.add_argument("--base-url", help="Base URL for metadata service", required=True)
+    parser.add_argument("--token-url", help="URL to fetch the IMDSv2 token", required=True)
 
     args = parser.parse_args()
-    token = get_token()
+
+    token = get_token(args.token_url)
 
     if args.key:
-        metadata = fetch_metadata_key(args.key, token)
+        metadata = fetch_metadata_key(args.base_url, args.key, token)
     else:
-        metadata = fetch_all_metadata(token)
+        metadata = fetch_all_metadata(args.base_url, token)
 
     print(json.dumps(metadata, indent=2))
 
